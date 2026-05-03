@@ -1529,12 +1529,8 @@ function init() {
   }
 }
 
-// Call when DOM is ready (belt + suspenders)
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+// Initialize on window load to ensure all scripts and DOM are ready
+window.addEventListener('load', init);
 </script>
 </body>
 </html>
