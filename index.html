@@ -1129,52 +1129,67 @@ function buildRoutePolylines() {
     const polyline = L.polyline(latlngs, {
       color: color,
       weight: 4,
-      opacity: 0.85,
+      opacity: 0.7,
       smoothFactor: 1
     });
 
     polyline.routeData = route;
-    polyline.on('click', () => showRouteDetail(route));
+    polyline.routeKey = route.key;
+    polyline.on('click', () => showRoute(route.key));
     routePolylines[route.key] = polyline;
+    polyline.addTo(map);
   });
 }
-
 function showRoute(routeKey) {
-  // Hide previously active
   if (activeRouteLayer) {
-    activeRouteLayer.setStyle({ weight: 4, opacity: 0.85 });
+    activeRouteLayer.setStyle({ weight: 4, opacity: 0.7 });
   }
   Object.values(routePolylines).forEach(pl => {
-    if (pl !== routePolylines[routeKey]) {
-      pl.setStyle({ opacity: 0.2, weight: 2 });
+    if (pl.routeKey !== routeKey) {
+      pl.setStyle({ opacity: 0.15, weight: 2 });
     }
   });
 
   activeRouteLayer = routePolylines[routeKey];
-  if (activeRouteLayer) {
-    activeRouteLayer.setStyle({ weight: 6, opacity: 1 });
-    map.fitBounds(activeRouteLayer.getBounds(), { padding: [50, 50], maxZoom: 15 });
-  }
-}
+  if (!activeRouteLayer) return;
 
+  activeRouteLayer.setStyle({ weight: 6, opacity: 1 });
+  map.fitBounds(activeRouteLayer.getBounds(), { padding: [60, 60], maxZoom: 15 });
+
+  const route = activeRouteLayer.routeData;
+  if (route) {
+    const color = getRouteColor(route.number, route.color);
+    document.getElementById('rdp-number').textContent = route.number;
+    document.getElementById('rdp-number').style.color = color;
+    document.getElementById('rdp-color').style.background = color;
+    document.getElementById('rdp-name').textContent = 'Línea ' + route.number + (route.color ? ' ' + route.color : '');
+    document.getElementById('rdp-points').textContent = route.points.length;
+    document.getElementById('rdp-dist').textContent = '—';
+    document.getElementById('route-panel').classList.add('visible');
+  }
+
+  updateRouteMarkers(routeKey);
+}
 function hideAllRoutes() {
   Object.values(routePolylines).forEach(pl => {
     pl.setStyle({ opacity: 0, weight: 0 });
   });
   activeRouteLayer = null;
+  clearRouteMarkers();
   document.querySelectorAll('.route-chip').forEach(c => c.classList.remove('active'));
   document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('route-panel').classList.remove('visible');
 }
-
 function showAllRoutes() {
   Object.values(routePolylines).forEach(pl => {
     const color = pl.routeData ? getRouteColor(pl.routeData.number, pl.routeData.color) : '#ff0000';
-    pl.setStyle({ opacity: 0.6, weight: 3, color });
+    pl.setStyle({ opacity: 0.7, weight: 4, color });
   });
   activeRouteLayer = null;
+  clearRouteMarkers();
+  document.getElementById('route-panel').classList.remove('visible');
   map.setView([-17.784, -63.115], 12);
 }
-
 function focusRoute() {
   if (activeRouteLayer) {
     map.fitBounds(activeRouteLayer.getBounds(), { padding: [80, 80], maxZoom: 15 });
@@ -1451,7 +1466,47 @@ document.getElementById('search-input').addEventListener('keydown', function(e) 
 });
 
 // ==================== INIT ====================
-async function init() {
+async 
+// ==================== ROUTE MARKERS (START/END) ====================
+let routeStartMarker = null;
+let routeEndMarker = null;
+
+function updateRouteMarkers(routeKey) {
+  clearRouteMarkers();
+  const pl = routePolylines[routeKey];
+  if (!pl || !pl.routeData) return;
+
+  const pts = pl.routeData.points;
+  if (!pts || pts.length === 0) return;
+
+  const start = pts[0];
+  const end = pts[pts.length - 1];
+
+  routeStartMarker = L.marker([start.lat, start.lng], {
+    icon: L.divIcon({
+      className: '',
+      html: '<div style="background:#10b981;border:3px solid white;border-radius:50%;width:18px;height:18px;box-shadow:0 2px 8px rgba(16,185,129,0.5);font-size:10px;color:white;text-align:center;line-height:14px;font-weight:bold;">▶</div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    })
+  }).addTo(map).bindPopup('<b>Inicio</b><br>Línea ' + pl.routeData.number);
+
+  routeEndMarker = L.marker([end.lat, end.lng], {
+    icon: L.divIcon({
+      className: '',
+      html: '<div style="background:#ef4444;border:3px solid white;border-radius:50% 50% 50% 0;width:18px;height:18px;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(239,68,68,0.5);"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 18]
+    })
+  }).addTo(map).bindPopup('<b>Fin</b><br>Línea ' + pl.routeData.number);
+}
+
+function clearRouteMarkers() {
+  if (routeStartMarker) { map.removeLayer(routeStartMarker); routeStartMarker = null; }
+  if (routeEndMarker) { map.removeLayer(routeEndMarker); routeEndMarker = null; }
+}
+
+function init() {
   buildRoutePolylines();
   buildAllRoutesGrid();
 
