@@ -1468,8 +1468,8 @@ document.getElementById('search-input').addEventListener('keydown', function(e) 
 // ==================== INIT ====================
 async 
 // ==================== ROUTE MARKERS (START/END) ====================
-let routeStartMarker = null;
-let routeEndMarker = null;
+var routeStartMarker = null;
+var routeEndMarker = null;
 
 function updateRouteMarkers(routeKey) {
   clearRouteMarkers();
@@ -1502,28 +1502,39 @@ function updateRouteMarkers(routeKey) {
 }
 
 function clearRouteMarkers() {
-  if (routeStartMarker) { map.removeLayer(routeStartMarker); routeStartMarker = null; }
-  if (routeEndMarker) { map.removeLayer(routeEndMarker); routeEndMarker = null; }
+  var marker = routeStartMarker;
+  if (marker) { map.removeLayer(marker); routeStartMarker = null; }
+  marker = routeEndMarker;
+  if (marker) { map.removeLayer(marker); routeEndMarker = null; }
 }
 
 function init() {
-  buildRoutePolylines();
-  buildAllRoutesGrid();
+  try {
+    buildRoutePolylines();
+    buildAllRoutesGrid();
 
-  // Try to get user location automatically
-  if (navigator.geolocation) {
-    try {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation(pos.coords.latitude, pos.coords.longitude),
-        () => { /* Silently fail, user can click button */ }
-      );
-    } catch(e) {}
+    // Try to get user location automatically
+    if (navigator.geolocation) {
+      try {
+        navigator.geolocation.getCurrentPosition(
+          pos => setUserLocation(pos.coords.latitude, pos.coords.longitude),
+          () => { /* Silently fail, user can click button */ }
+        );
+      } catch(e) {}
+    }
+
+    document.getElementById('loading').style.display = 'none';
+  } catch(e) {
+    console.error('init() error:', e.message, e.stack);
   }
-
-  document.getElementById('loading').style.display = 'none';
 }
 
-init();
+// Call when DOM is ready (belt + suspenders)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 </script>
 </body>
 </html>
