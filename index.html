@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rutas Santa Cruz — Planificador de Micro</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1e2a40;
+    --border: #2a3a55;
+    --primary: #3b82f6;
+    --primary-glow: rgba(59,130,246,0.3);
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --gradient: linear-gradient(135deg, #3b82f6, #06b6d4);
+    --gradient-warm: linear-gradient(135deg, #f59e0b, #ef4444);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ========== HEADER ========== */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 62px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 1000;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 38px;
+    height: 38px;
+    background: var(--gradient);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 15px var(--primary-glow);
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .logo-title {
+    font-size: 14pt;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+
+  .logo-sub {
+    font-size: 8pt;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .header-spacer { flex: 1; }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9pt;
+    color: var(--text-muted);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ========== MAIN LAYOUT ========== */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ========== LEFT PANEL ========== */
+  .panel-left {
+    width: 360px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  /* ========== SEARCH ========== */
+  .search-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .search-label {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .search-box {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 11px 14px 11px 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 11pt;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+  }
+
+  .search-input::placeholder { color: var(--text-dim); }
+
+  .search-hint {
+    font-size: 8pt;
+    color: var(--text-dim);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ========== LOCATION STATUS ========== */
+  .location-status {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .location-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .location-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px var(--primary-glow);
+  }
+
+  .location-info { flex: 1; }
+
+  .location-label {
+    font-size: 8pt;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+
+  .location-text {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .location-btn {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 9pt;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .location-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .location-btn.active {
+    background: var(--primary-glow);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  /* ========== ROUTE LIST ========== */
+  .routes-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .routes-title {
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .routes-count {
+    background: var(--primary);
+    color: white;
+    font-size: 9pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .routes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .routes-list::-webkit-scrollbar { width: 4px; }
+  .routes-list::-webkit-scrollbar-track { background: transparent; }
+  .routes-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .route-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .route-card:hover, .route-card.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary), 0 4px 20px rgba(59,130,246,0.15);
+    transform: translateY(-1px);
+  }
+
+  .route-card.selected::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--primary);
+    border-radius: 3px 0 0 3px;
+  }
+
+  .route-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .route-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13pt;
+    font-weight: 600;
+    color: white;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .route-color-bar {
+    width: 4px;
+    border-radius: 4px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .route-info { flex: 1; }
+
+  .route-name {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .route-variant {
+    font-size: 8pt;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .route-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .route-stat {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 8pt;
+    color: var(--text-muted);
+    background: var(--surface3);
+    padding: 2px 7px;
+    border-radius: 6px;
+  }
+
+  .route-stat-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  /* ========== ALL ROUTES SECTION ========== */
+  .all-routes-section {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .all-routes-title {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .all-routes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .route-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 8pt;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .route-chip:hover {
+    transform: scale(1.08);
+    z-index: 1;
+    position: relative;
+  }
+
+  .route-chip.active {
+    border-color: white;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .route-chip-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ========== MAP ========== */
+  .map-container {
+    flex: 1;
+    position: relative;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Leaflet overrides */
+  .leaflet-container {
+    background: #0a0e1a;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  }
+
+  .leaflet-control-zoom a {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 34px !important;
+    font-size: 16px !important;
+  }
+
+  .leaflet-control-zoom a:hover {
+    background: var(--surface2) !important;
+    color: var(--primary) !important;
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(10,14,26,0.8) !important;
+    color: var(--text-dim) !important;
+    font-size: 8pt !important;
+  }
+
+  .leaflet-control-attribution a { color: var(--text-dim) !important; }
+
+  .leaflet-popup-content-wrapper {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+  }
+
+  .leaflet-popup-tip {
+    background: var(--surface) !important;
+  }
+
+  .leaflet-popup-close-button {
+    color: var(--text-muted) !important;
+  }
+
+  .user-marker {
+    background: var(--gradient);
+    border: 3px solid white;
+    border-radius: 50%;
+    width: 18px !important;
+    height: 18px !important;
+    margin-left: -9px !important;
+    margin-top: -9px !important;
+    box-shadow: 0 0 0 4px var(--primary-glow), 0 4px 12px rgba(0,0,0,0.5) !important;
+    animation: userPulse 2s infinite;
+  }
+
+  @keyframes userPulse {
+    0%, 100% { box-shadow: 0 0 0 4px var(--primary-glow), 0 4px 12px rgba(0,0,0,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(59,130,246,0.15), 0 4px 12px rgba(0,0,0,0.5); }
+  }
+
+  /* ========== FLOATING CONTROLS ========== */
+  .map-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .map-btn {
+    width: 42px;
+    height: 42px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  .map-btn:hover {
+    background: var(--surface2);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .map-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  /* ========== ROUTE INFO PANEL ========== */
+  .route-detail-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 376px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    display: none;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .route-detail-panel.visible { display: flex; }
+
+  .rdp-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 200px;
+  }
+
+  .rdp-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22pt;
+    font-weight: 800;
+    color: white;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .rdp-color {
+    width: 6px;
+    height: 50px;
+    border-radius: 6px;
+  }
+
+  .rdp-info { flex: 1; }
+
+  .rdp-name {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .rdp-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 9pt;
+    color: var(--text-muted);
+  }
+
+  .rdp-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .rdp-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .rdp-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 10pt;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .rdp-btn-primary {
+    background: var(--gradient);
+    color: white;
+  }
+
+  .rdp-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  .rdp-btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .rdp-btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+  .rdp-close {
+    font-size: 18px;
+    color: var(--text-dim);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .rdp-close:hover { color: var(--danger); }
+
+  /* ========== DESTINATION MARKER ========== */
+  .dest-marker {
+    background: #ef4444;
+    border: 3px solid white;
+    border-radius: 50% 50% 50% 0;
+    width: 20px !important;
+    height: 20px !important;
+    margin-left: -10px !important;
+    margin-top: -36px !important;
+    transform: rotate(-45deg);
+    box-shadow: 0 4px 16px rgba(239,68,68,0.5) !important;
+  }
+
+  /* ========== TOAST ========== */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 10pt;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .toast.visible { transform: translateY(0); opacity: 1; }
+
+  .toast.success { border-color: var(--success); }
+  .toast.error { border-color: var(--danger); }
+  .toast.info { border-color: var(--primary); }
+
+  /* ========== LOADING ========== */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,14,26,0.95);
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    color: var(--text-muted);
+    font-size: 11pt;
+  }
+
+  /* ========== GLOW LINE ========== */
+  .glow-line {
+    width: 60px;
+    height: 4px;
+    background: var(--gradient);
+    border-radius: 4px;
+    animation: glow 2s infinite;
+  }
+
+  @keyframes glow {
+    0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--primary); }
+    50% { opacity: 0.6; box-shadow: 0 0 20px var(--primary); }
+  }
+
+  /* ========== SCROLLBAR ========== */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 768px) {
+    .panel-left { width: 100%; height: 40%; }
+    .route-detail-panel { left: 16px; bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Cargando rutas de Santa Cruz...</div>
+  <div class="glow-line"></div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">🚌</div>
+    <div class="logo-text">
+      <div class="logo-title">Rutas Santa Cruz</div>
+      <div class="logo-sub">Planificador de Micro</div>
+    </div>
+  </div>
+
+  <div class="header-spacer"></div>
+
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-dot"></div>
+      <span id="status-text">147 rutas cargadas</span>
+    </div>
+    <div class="status-item">
+      <span>📍 Tu ubicación</span>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Left Panel -->
+  <aside class="panel-left">
+
+    <!-- Search -->
+    <div class="search-section">
+      <div class="search-label">¿A dónde vas?</div>
+      <div class="search-box">
+        <div class="search-icon">🔍</div>
+        <input type="text" class="search-input" id="search-input"
+          placeholder="Escribe una dirección en Santa Cruz..." />
+      </div>
+      <div class="search-hint">💡 Escribe una calle, plaza o barrio</div>
+    </div>
+
+    <!-- Location -->
+    <div class="location-status">
+      <div class="location-row">
+        <div class="location-icon">📍</div>
+        <div class="location-info">
+          <div class="location-label">Tu ubicación</div>
+          <div class="location-text" id="location-text">Obteniendo ubicación...</div>
+        </div>
+        <button class="location-btn" id="locate-btn" onclick="requestLocation()">📍 Ubicarme</button>
+      </div>
+    </div>
+
+    <!-- Nearby Routes -->
+    <div class="routes-header">
+      <div class="routes-title">🚏 Rutas Cercanas</div>
+      <div class="routes-count" id="routes-count">0</div>
+    </div>
+
+    <div class="routes-list" id="routes-list">
+      <div style="text-align:center; padding:30px; color: var(--text-dim); font-size:10pt;">
+        Escribe un destino o presiona<br>"Ubicarme" para comenzar
+      </div>
+    </div>
+
+    <!-- All Routes -->
+    <div class="all-routes-section">
+      <div class="all-routes-title">Todas las rutas</div>
+      <div class="all-routes-grid" id="all-routes-grid"></div>
+    </div>
+
+  </aside>
+
+  <!-- Map -->
+  <div class="map-container">
+    <div id="map"></div>
+
+    <div class="map-controls">
+      <button class="map-btn" onclick="map.setView([-17.784, -63.115], 13)" title="Centro">🏙</button>
+      <button class="map-btn" id="sat-btn" onclick="toggleSatellite()" title="Satélite">🛰</button>
+      <button class="map-btn" onclick="requestLocation()" title="Mi ubicación">📍</button>
+      <button class="map-btn" onclick="resetView()" title="Reset">🔄</button>
+    </div>
+
+    <!-- Route Detail Panel -->
+    <div class="route-detail-panel" id="route-panel">
+      <div class="rdp-line">
+        <div class="rdp-color" id="rdp-color"></div>
+        <div class="rdp-number" id="rdp-number">—</div>
+      </div>
+      <div class="rdp-info">
+        <div class="rdp-name" id="rdp-name">—</div>
+        <div class="rdp-stats">
+          <div class="rdp-stat">📍 <span id="rdp-points">—</span> puntos GPS</div>
+          <div class="rdp-stat">🎯 <span id="rdp-dist">—</span> de ti</div>
+        </div>
+      </div>
+      <div class="rdp-actions">
+        <button class="rdp-btn rdp-btn-primary" onclick="focusRoute()">Ver en mapa</button>
+        <button class="rdp-btn rdp-btn-secondary" onclick="hideRoutePanel()">Cerrar</button>
+      </div>
+      <div class="rdp-close" onclick="hideRoutePanel()">✕</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ==================== DATA ====================
+const ROUTES_DATA = [
+  {key:"linea-1",number:"1",name:"linea1",color:null,points:[{lat:-17.7860928,lng:-63.0985654},{lat:-17.7861975,lng:-63.0984019}]},
+  {key:"linea-2",number:"2",name:"linea2",color:null,points:[{lat:-17.8510798,lng:-63.2290794},{lat:-17.8511105,lng:-63.2291111}]},
+  {key:"linea-3",number:"3",name:"linea3",color:null,points:[{lat:-17.794992,lng:-63.134712},{lat:-17.7949416,lng:-63.1351405}]},
+  {key:"linea-4",number:"4",name:"linea4",color:null,points:[{lat:-17.7683428,lng:-63.2036904},{lat:-17.7683509,lng:-63.2036948}]},
+  {key:"linea-5",number:"5",name:"linea5",color:null,points:[{lat:-17.8220589,lng:-63.2346607},{lat:-17.8229801,lng:-63.2351187}]},
+  {key:"linea-6",number:"6",name:"linea6",color:null,points:[{lat:-17.825851,lng:-63.236489},{lat:-17.825851,lng:-63.236489}]},
+  {key:"linea-7",number:"7",name:"linea7",color:null,points:[{lat:-17.8716487,lng:-63.1487874},{lat:-17.871649,lng:-63.148787}]},
+  {key:"linea-8",number:"8",name:"linea8",color:null,points:[{lat:-17.8236513,lng:-63.1291939},{lat:-17.823651,lng:-63.129194}]},
+  {key:"linea-9",number:"9",name:"linea9",color:null,points:[{lat:-17.805377,lng:-63.0765008},{lat:-17.805377,lng:-63.076501}]},
+  {key:"linea-10",number:"10",name:"linea10",color:null,points:[{lat:-17.8093182,lng:-63.11918},{lat:-17.809318,lng:-63.11918}]},
+  {key:"linea-11",number:"11",name:"linea11",color:null,points:[{lat:-17.8266465,lng:-63.089037},{lat:-17.826646,lng:-63.089037}]},
+  {key:"linea-12",number:"12",name:"linea12",color:null,points:[{lat:-17.8691706,lng:-63.2202523},{lat:-17.8692149,lng:-63.2202464}]},
+  {key:"linea-13",number:"13",name:"linea13",color:null,points:[{lat:-17.8694067,lng:-63.2202398},{lat:-17.869407,lng:-63.22024}]},
+  {key:"linea-14",number:"14",name:"linea14",color:null,points:[{lat:-17.8201904,lng:-63.1989105},{lat:-17.8202419,lng:-63.1987798}]},
+  {key:"linea-15",number:"15",name:"linea15",color:null,points:[{lat:-17.8198821,lng:-63.1894176},{lat:-17.8208007,lng:-63.1892696}]},
+  {key:"linea-16-azul",number:"16",name:"linea16 Azul",color:"Azul",points:[{lat:-17.8224075,lng:-63.1774916},{lat:-17.8224071,lng:-63.1774591}]},
+  {key:"linea-17",number:"17",name:"linea17",color:null,points:[{lat:-17.791036,lng:-63.173018},{lat:-17.791269,lng:-63.172827}]},
+  {key:"linea-18",number:"18",name:"linea18",color:null,points:[{lat:-17.791036,lng:-63.173018},{lat:-17.791269,lng:-63.172827}]},
+  {key:"linea-19",number:"19",name:"linea19",color:null,points:[{lat:-17.7953983,lng:-63.2191865},{lat:-17.795356,lng:-63.219193}]},
+  {key:"linea-20",number:"20",name:"linea20",color:null,points:[{lat:-17.8511192,lng:-63.2291303},{lat:-17.8510553,lng:-63.2290563}]},
+  {key:"linea-21",number:"21",name:"linea21",color:null,points:[{lat:-17.8929445,lng:-63.1831278},{lat:-17.8929522,lng:-63.1831329}]},
+  {key:"linea-22-rojo",number:"22",name:"linea22 Rojo",color:"Rojo",points:[{lat:-17.8626122,lng:-63.1207158},{lat:-17.8626125,lng:-63.1207131}]},
+  {key:"linea-23",number:"23",name:"linea23",color:null,points:[{lat:-17.8557995,lng:-63.1688709},{lat:-17.8558,lng:-63.168871}]},
+  {key:"linea-24",number:"24",name:"linea24",color:null,points:[{lat:-17.8745405,lng:-63.1865829},{lat:-17.874506,lng:-63.186752}]},
+  {key:"linea-25",number:"25",name:"linea25",color:null,points:[{lat:-17.8515641,lng:-63.2296138},{lat:-17.8511173,lng:-63.2291205}]},
+  {key:"linea-26",number:"26",name:"linea26",color:null,points:[{lat:-17.794355,lng:-63.16238},{lat:-17.7943603,lng:-63.1623906}]},
+  {key:"linea-27",number:"27",name:"linea27",color:null,points:[{lat:-17.7778401,lng:-63.2153684},{lat:-17.777827,lng:-63.215369}]},
+  {key:"linea-28",number:"28",name:"linea28",color:null,points:[{lat:-17.764845,lng:-63.1606008},{lat:-17.7648271,lng:-63.1606237}]},
+  {key:"linea-29",number:"29",name:"linea29",color:null,points:[{lat:-17.786423,lng:-63.224706},{lat:-17.7864228,lng:-63.2247274}]},
+  {key:"linea-30",number:"30",name:"linea30",color:null,points:[{lat:-17.7067433,lng:-63.1849018},{lat:-17.7066548,lng:-63.1848887}]},
+  {key:"linea-31",number:"31",name:"linea31",color:null,points:[{lat:-17.8861318,lng:-63.2059291},{lat:-17.8861362,lng:-63.2059343}]},
+  {key:"linea-32",number:"32",name:"linea32",color:null,points:[{lat:-17.7801133,lng:-63.2160952},{lat:-17.780096,lng:-63.214969}]},
+  {key:"linea-33",number:"33",name:"linea33",color:null,points:[{lat:-17.8285502,lng:-63.1151036},{lat:-17.828451,lng:-63.1151748}]},
+  {key:"linea-34",number:"34",name:"linea34",color:null,points:[{lat:-17.8229665,lng:-63.232692},{lat:-17.8229863,lng:-63.2326686}]},
+  {key:"linea-35",number:"35",name:"linea35",color:null,points:[{lat:-17.7900609,lng:-63.224436},{lat:-17.7900616,lng:-63.224442}]},
+  {key:"linea-36",number:"36",name:"linea36",color:null,points:[{lat:-17.850473,lng:-63.1056554},{lat:-17.850473,lng:-63.105655}]},
+  {key:"linea-37",number:"37",name:"linea37",color:null,points:[{lat:-17.8202117,lng:-63.1142126},{lat:-17.8209794,lng:-63.1137788}]},
+  {key:"linea-38",number:"38",name:"linea38",color:null,points:[{lat:-17.8483197,lng:-63.1062851},{lat:-17.8483966,lng:-63.1062474}]},
+  {key:"linea-39",number:"39",name:"linea39",color:null,points:[{lat:-17.8933636,lng:-63.0895379},{lat:-17.893364,lng:-63.089538}]},
+  {key:"linea-40",number:"40",name:"linea40",color:null,points:[{lat:-17.7129773,lng:-63.1811778},{lat:-17.712977,lng:-63.181178}]},
+  {key:"linea-41-rojo",number:"41",name:"linea41 Rojo",color:"Rojo",points:[{lat:-17.8886239,lng:-63.077036},{lat:-17.888624,lng:-63.077036}]},
+  {key:"linea-41-verde",number:"41",name:"linea41 Verde",color:"Verde",points:[{lat:-17.8522951,lng:-63.1182176},{lat:-17.852295,lng:-63.118218}]},
+  {key:"linea-42",number:"42",name:"linea42",color:null,points:[{lat:-17.8229042,lng:-63.1453554},{lat:-17.822904,lng:-63.145355}]},
+  {key:"linea-43",number:"43",name:"linea43",color:null,points:[{lat:-17.7978401,lng:-63.0873889},{lat:-17.797824,lng:-63.087408}]},
+  {key:"linea-44-azul",number:"44",name:"linea44 Azul",color:"Azul",points:[{lat:-17.7933604,lng:-63.1875294},{lat:-17.7932715,lng:-63.1873095}]},
+  {key:"linea-44-rojo",number:"44",name:"linea44 Rojo",color:"Rojo",points:[{lat:-17.880738,lng:-63.2272551},{lat:-17.8807736,lng:-63.227338}]},
+  {key:"linea-45",number:"45",name:"linea45",color:null,points:[{lat:-17.831795,lng:-63.107652},{lat:-17.831795,lng:-63.107652}]},
+  {key:"linea-46",number:"46",name:"linea46",color:null,points:[{lat:-17.7815925,lng:-63.0895635},{lat:-17.781592,lng:-63.089564}]},
+  {key:"linea-47",number:"47",name:"linea47",color:null,points:[{lat:-17.8502464,lng:-63.062622},{lat:-17.850246,lng:-63.062622}]},
+  {key:"linea-48",number:"48",name:"linea48",color:null,points:[{lat:-17.8742325,lng:-63.2347415},{lat:-17.874232,lng:-63.234742}]},
+  {key:"linea-49",number:"49",name:"linea49",color:null,points:[{lat:-17.8456272,lng:-63.2152263},{lat:-17.845627,lng:-63.215226}]},
+  {key:"linea-50",number:"50",name:"linea50",color:null,points:[{lat:-17.8511774,lng:-63.229194},{lat:-17.8517191,lng:-63.229757}]},
+  {key:"linea-51",number:"51",name:"linea51",color:null,points:[{lat:-17.8412348,lng:-63.2161426},{lat:-17.8413199,lng:-63.2161785}]},
+  {key:"linea-52",number:"52",name:"linea52",color:null,points:[{lat:-17.8128637,lng:-63.0799472},{lat:-17.8128717,lng:-63.0800194}]},
+  {key:"linea-53",number:"53",name:"linea53",color:null,points:[{lat:-17.7864349,lng:-63.2260442},{lat:-17.7864457,lng:-63.2260909}]},
+  {key:"linea-54",number:"54",name:"linea54",color:null,points:[{lat:-17.8358471,lng:-63.0993266},{lat:-17.8358418,lng:-63.0993217}]},
+  {key:"linea-55",number:"55",name:"linea55",color:null,points:[{lat:-17.8780571,lng:-63.1388143},{lat:-17.878057,lng:-63.138814}]},
+  {key:"linea-56",number:"56",name:"linea56",color:null,points:[{lat:-17.8609832,lng:-63.1541747},{lat:-17.860983,lng:-63.154175}]},
+  {key:"linea-57",number:"57",name:"linea57",color:null,points:[{lat:-17.8626765,lng:-63.1541713},{lat:-17.862676,lng:-63.154171}]},
+  {key:"linea-58",number:"58",name:"linea58",color:null,points:[{lat:-17.872186,lng:-63.1403372},{lat:-17.872186,lng:-63.140337}]},
+  {key:"linea-59",number:"59",name:"linea59",color:null,points:[{lat:-17.8731484,lng:-63.051881},{lat:-17.873148,lng:-63.051881}]},
+  {key:"linea-60-rojo",number:"60",name:"linea60 Rojo",color:"Rojo",points:[{lat:-17.8929321,lng:-63.1432986},{lat:-17.892932,lng:-63.143299}]},
+  {key:"linea-60-verde",number:"60",name:"linea60 Verde",color:"Verde",points:[{lat:-17.9277544,lng:-63.1108565},{lat:-17.927754,lng:-63.110856}]},
+  {key:"linea-61-azul",number:"61",name:"linea61 Azul",color:"Azul",points:[{lat:-17.7931935,lng:-63.1864177},{lat:-17.793194,lng:-63.186418}]},
+  {key:"linea-61-rojo",number:"61",name:"linea61 Rojo",color:"Rojo",points:[{lat:-17.735499,lng:-63.0740732},{lat:-17.7354249,lng:-63.0740731}]},
+  {key:"linea-62",number:"62",name:"linea62",color:null,points:[{lat:-17.8698077,lng:-63.0858669},{lat:-17.869808,lng:-63.085867}]},
+  {key:"linea-62-naranja",number:"62",name:"linea62 Naranja",color:"Naranja",points:[{lat:-17.8767725,lng:-63.0409173},{lat:-17.876772,lng:-63.040917}]},
+  {key:"linea-63",number:"63",name:"linea63",color:null,points:[{lat:-17.743469,lng:-63.0982271},{lat:-17.743469,lng:-63.098227}]},
+  {key:"linea-64-amarillo",number:"64",name:"linea64 Amarillo",color:"Amarillo",points:[{lat:-17.7648599,lng:-63.1605771},{lat:-17.7646605,lng:-63.160584}]},
+  {key:"linea-64-rojo",number:"64",name:"linea64 Rojo",color:"Rojo",points:[{lat:-17.781331,lng:-63.190052},{lat:-17.781331,lng:-63.190052}]},
+  {key:"linea-65",number:"65",name:"linea65",color:null,points:[{lat:-17.7821329,lng:-63.0988728},{lat:-17.782133,lng:-63.098873}]},
+  {key:"linea-66-rojo",number:"66",name:"linea66 Rojo",color:"Rojo",points:[{lat:-17.7257957,lng:-63.1637878},{lat:-17.7257347,lng:-63.1640106}]},
+  {key:"linea-67",number:"67",name:"linea67",color:null,points:[{lat:-17.8749683,lng:-63.1373683},{lat:-17.874968,lng:-63.137368}]},
+  {key:"linea-68-rojo",number:"68",name:"linea68 Rojo",color:"Rojo",points:[{lat:-17.8476004,lng:-63.0663125},{lat:-17.8476,lng:-63.066312}]},
+  {key:"linea-68-verde",number:"68",name:"linea68 Verde",color:"Verde",points:[{lat:-17.7948274,lng:-63.2039335},{lat:-17.7947492,lng:-63.203966}]},
+  {key:"linea-69",number:"69",name:"linea69",color:null,points:[{lat:-17.77186,lng:-63.209537},{lat:-17.77186,lng:-63.209537}]},
+  {key:"linea-70",number:"70",name:"linea70",color:null,points:[{lat:-17.820284,lng:-63.194668},{lat:-17.8204441,lng:-63.1946144}]},
+  {key:"linea-71",number:"71",name:"linea71",color:null,points:[{lat:-17.6949806,lng:-63.1382616},{lat:-17.694981,lng:-63.138262}]},
+  {key:"linea-72",number:"72",name:"linea72",color:null,points:[{lat:-17.7933945,lng:-63.166221},{lat:-17.7938827,lng:-63.166005}]},
+  {key:"linea-73",number:"73",name:"linea73",color:null,points:[{lat:-17.7933809,lng:-63.1662162},{lat:-17.7935014,lng:-63.1659317}]},
+  {key:"linea-74",number:"74",name:"linea74",color:null,points:[{lat:-17.811317,lng:-63.1747304},{lat:-17.811341,lng:-63.1748023}]},
+  {key:"linea-75",number:"75",name:"linea75",color:null,points:[{lat:-17.8121258,lng:-63.175974},{lat:-17.812126,lng:-63.175974}]},
+  {key:"linea-76",number:"76",name:"linea76",color:null,points:[{lat:-17.7209857,lng:-63.1773046},{lat:-17.7209612,lng:-63.177371}]},
+  {key:"linea-77",number:"77",name:"linea77",color:null,points:[{lat:-17.7130419,lng:-63.1786792},{lat:-17.713042,lng:-63.178679}]},
+  {key:"linea-78",number:"78",name:"linea78",color:null,points:[{lat:-17.7191015,lng:-63.1847087},{lat:-17.7191045,lng:-63.1848794}]},
+  {key:"linea-79",number:"79",name:"linea79",color:null,points:[{lat:-17.8231732,lng:-63.1645506},{lat:-17.8233403,lng:-63.1644571}]},
+  {key:"linea-80",number:"80",name:"linea80",color:null,points:[{lat:-17.8109952,lng:-63.2203288},{lat:-17.813074,lng:-63.2180287}]},
+  {key:"linea-81",number:"81",name:"linea81",color:null,points:[{lat:-17.880786,lng:-63.162043},{lat:-17.8807937,lng:-63.1620805}]},
+  {key:"linea-82",number:"82",name:"linea82",color:null,points:[{lat:-17.8231884,lng:-63.1645612},{lat:-17.8235166,lng:-63.1646477}]},
+  {key:"linea-83",number:"83",name:"linea83",color:null,points:[{lat:-17.9234217,lng:-63.2429684},{lat:-17.923422,lng:-63.242968}]},
+  {key:"linea-84",number:"84",name:"linea84",color:null,points:[{lat:-17.8698949,lng:-63.2064605},{lat:-17.8699003,lng:-63.2064461}]},
+  {key:"linea-85",number:"85",name:"linea85",color:null,points:[{lat:-17.8835756,lng:-63.1536213},{lat:-17.8838075,lng:-63.1533724}]},
+  {key:"linea-86",number:"86",name:"linea86",color:null,points:[{lat:-17.832462,lng:-63.264405},{lat:-17.832462,lng:-63.264405}]},
+  {key:"linea-87",number:"87",name:"linea87",color:null,points:[{lat:-17.7414438,lng:-63.1020006},{lat:-17.741444,lng:-63.102001}]},
+  {key:"linea-88-amarillo",number:"88",name:"linea88 Amarillo",color:"Amarillo",points:[{lat:-17.7339338,lng:-63.0777731},{lat:-17.7339075,lng:-63.0777659}]},
+  {key:"linea-88-azul",number:"88",name:"linea88 Azul",color:"Azul",points:[{lat:-17.7314809,lng:-63.0952953},{lat:-17.7314686,lng:-63.0952818}]},
+  {key:"linea-89",number:"89",name:"linea89",color:null,points:[{lat:-17.8258943,lng:-63.102439},{lat:-17.825894,lng:-63.102439}]},
+  {key:"linea-90",number:"90",name:"linea90",color:null,points:[{lat:-17.8511954,lng:-63.2292127},{lat:-17.851109,lng:-63.22912}]},
+  {key:"linea-92",number:"92",name:"linea92",color:null,points:[{lat:-17.8637936,lng:-63.2515263},{lat:-17.863834,lng:-63.251586}]},
+  {key:"linea-93",number:"93",name:"linea93",color:null,points:[{lat:-17.7902968,lng:-63.2061559},{lat:-17.790297,lng:-63.206156}]},
+  {key:"linea-94",number:"94",name:"linea94",color:null,points:[{lat:-17.779368,lng:-63.180348},{lat:-17.7793671,lng:-63.1803509}]},
+  {key:"linea-96-amarillo",number:"96",name:"linea96 Amarillo",color:"Amarillo",points:[{lat:-17.785488,lng:-63.216483},{lat:-17.7854675,lng:-63.2164696}]},
+  {key:"linea-96-rojo",number:"96",name:"linea96 Rojo",color:"Rojo",points:[{lat:-17.851137,lng:-63.229143},{lat:-17.8510769,lng:-63.2290626}]},
+  {key:"linea-97",number:"97",name:"linea97",color:null,points:[{lat:-17.7733767,lng:-63.2108578},{lat:-17.7733668,lng:-63.210858}]},
+  {key:"linea-98",number:"98",name:"linea98",color:null,points:[{lat:-17.7685624,lng:-63.2028541},{lat:-17.768403,lng:-63.202996}]},
+  {key:"linea-99",number:"99",name:"linea99",color:null,points:[{lat:-17.7265607,lng:-63.1753084},{lat:-17.726561,lng:-63.175308}]},
+  {key:"linea-100",number:"100",name:"linea100",color:null,points:[{lat:-17.7772701,lng:-63.2142389},{lat:-17.77727,lng:-63.214239}]},
+  {key:"linea-101",number:"101",name:"linea101",color:null,points:[{lat:-17.7881958,lng:-63.1604924},{lat:-17.7882071,lng:-63.1604528}]},
+  {key:"linea-102",number:"102",name:"linea102",color:null,points:[{lat:-17.7535905,lng:-62.9939723},{lat:-17.753598,lng:-62.9939752}]},
+  {key:"linea-103",number:"103",name:"linea103",color:null,points:[{lat:-17.8190178,lng:-63.1184552},{lat:-17.819018,lng:-63.118455}]},
+  {key:"linea-104b",number:"104",name:"linea104B",color:"B",points:[{lat:-17.7985888,lng:-63.200931},{lat:-17.7986002,lng:-63.2009562}]},
+  {key:"linea-104-el-carmen",number:"104",name:"linea104 El Carmen",color:"El Carmen",points:[{lat:-17.7094351,lng:-63.0609065},{lat:-17.709435,lng:-63.060906}]},
+  {key:"linea-105-verde",number:"105",name:"linea105 Verde",color:"Verde",points:[{lat:-17.8114214,lng:-63.1595632},{lat:-17.8113452,lng:-63.159789}]},
+  {key:"linea-106",number:"106",name:"linea106",color:null,points:[{lat:-17.8494699,lng:-63.2414778},{lat:-17.84947,lng:-63.241478}]},
+  {key:"linea-107",number:"107",name:"linea107",color:null,points:[{lat:-17.871541,lng:-63.101303},{lat:-17.871541,lng:-63.101303}]},
+  {key:"linea-108",number:"108",name:"linea108",color:null,points:[{lat:-17.8833501,lng:-63.1748043},{lat:-17.88335,lng:-63.174804}]},
+  {key:"linea-109",number:"109",name:"linea109",color:null,points:[{lat:-17.8915618,lng:-63.1694266},{lat:-17.891562,lng:-63.169427}]},
+  {key:"linea-110",number:"110",name:"linea110",color:null,points:[{lat:-17.8558447,lng:-63.1688303},{lat:-17.855845,lng:-63.16883}]},
+  {key:"linea-111-paititi",number:"111",name:"linea111 Paititi",color:"Paititi",points:[{lat:-17.7928266,lng:-63.1869655},{lat:-17.7928119,lng:-63.1869706}]},
+  {key:"linea-111",number:"111",name:"linea111",color:null,points:[{lat:-17.7928399,lng:-63.1869668},{lat:-17.79284,lng:-63.186967}]},
+  {key:"linea-112",number:"112",name:"linea112",color:null,points:[{lat:-17.855191,lng:-63.1164705},{lat:-17.855191,lng:-63.11647}]},
+  {key:"linea-113",number:"113",name:"linea113",color:null,points:[{lat:-17.8780692,lng:-63.1738061},{lat:-17.878069,lng:-63.173806}]},
+  {key:"linea-114",number:"114",name:"linea114",color:null,points:[{lat:-17.8625651,lng:-63.120722},{lat:-17.8625719,lng:-63.1207}]},
+  {key:"linea-115",number:"115",name:"linea115",color:null,points:[{lat:-17.8551276,lng:-63.2061103},{lat:-17.855128,lng:-63.20611}]},
+  {key:"linea-116",number:"116",name:"linea116",color:null,points:[{lat:-17.7938611,lng:-63.1870095},{lat:-17.793861,lng:-63.18701}]},
+  {key:"linea-119",number:"119",name:"linea119",color:null,points:[{lat:-17.7941689,lng:-63.1867802},{lat:-17.7938999,lng:-63.1868124}]},
+  {key:"linea-120",number:"120",name:"linea120",color:null,points:[{lat:-17.7510858,lng:-63.1921544},{lat:-17.751086,lng:-63.192154}]},
+  {key:"linea-121-rojo",number:"121",name:"linea121 Rojo",color:"Rojo",points:[{lat:-17.7978837,lng:-63.2166818},{lat:-17.797884,lng:-63.216682}]},
+  {key:"linea-122-amarillo",number:"122",name:"linea122 Amarillo",color:"Amarillo",points:[{lat:-17.7024435,lng:-63.1515104},{lat:-17.702444,lng:-63.15151}]},
+  {key:"linea-123",number:"123",name:"linea123",color:null,points:[{lat:-17.7487734,lng:-63.1963568},{lat:-17.748773,lng:-63.196357}]},
+  {key:"linea-124",number:"124",name:"linea124",color:null,points:[{lat:-17.8511968,lng:-63.2291982},{lat:-17.8511058,lng:-63.2291096}]},
+  {key:"linea-125-uv-doce",number:"125",name:"linea125 UV Doce",color:"UV Doce",points:[{lat:-17.8113246,lng:-63.1599218},{lat:-17.811325,lng:-63.159809}]},
+  {key:"linea-125-uv-once",number:"125",name:"linea125 UV Once",color:"UV Once",points:[{lat:-17.8114172,lng:-63.1595799},{lat:-17.811417,lng:-63.15958}]},
+  {key:"linea-126",number:"126",name:"linea126",color:null,points:[{lat:-17.7932366,lng:-63.1746302},{lat:-17.793237,lng:-63.17463}]},
+  {key:"linea-127",number:"127",name:"linea127",color:null,points:[{lat:-17.7759119,lng:-63.1798376},{lat:-17.775912,lng:-63.179838}]},
+  {key:"linea-129",number:"129",name:"linea129",color:null,points:[{lat:-17.7647952,lng:-63.1606049},{lat:-17.7647235,lng:-63.1605995}]},
+  {key:"linea-130",number:"130",name:"linea130",color:null,points:[{lat:-17.7165112,lng:-63.1616736},{lat:-17.7168588,lng:-63.160854}]},
+  {key:"linea-132-montero",number:"132",name:"linea132 Montero",color:"Montero",points:[{lat:-17.7883888,lng:-63.1878178},{lat:-17.7569562,lng:-63.177955}]},
+  {key:"linea-132",number:"132",name:"linea132",color:null,points:[{lat:-17.7372679,lng:-63.1702519},{lat:-17.737268,lng:-63.170252}]},
+  {key:"linea-135-viru-viru",number:"135",name:"linea135 Viru Viru",color:"Viru Viru",points:[{lat:-17.7921916,lng:-63.1866736},{lat:-17.7922084,lng:-63.1867701}]},
+  {key:"linea-136-recreo",number:"136",name:"linea136 Recreo",color:"Recreo",points:[{lat:-17.7761477,lng:-63.184516},{lat:-17.7761889,lng:-63.184526}]},
+  {key:"linea-136-norte",number:"136",name:"linea136 Norte",color:"Norte",points:[{lat:-17.7939148,lng:-63.18681},{lat:-17.7939966,lng:-63.186812}]},
+  {key:"linea-140-g-pascana",number:"140",name:"linea140 G Pascana",color:"G Pascana",points:[{lat:-17.8293062,lng:-63.1828821},{lat:-17.829306,lng:-63.182882}]},
+  {key:"linea-140-p-pascana",number:"140",name:"linea140 P Pascana",color:"P Pascana",points:[{lat:-17.8152919,lng:-63.1864728},{lat:-17.815113,lng:-63.1864795}]},
+  {key:"linea-141",number:"141",name:"linea141",color:null,points:[{lat:-17.7730554,lng:-63.1288196},{lat:-17.773055,lng:-63.12882}]},
+  {key:"linea-142-verde",number:"142",name:"linea142 Verde",color:"Verde",points:[{lat:-17.7800826,lng:-63.1909921},{lat:-17.780083,lng:-63.190992}]},
+  {key:"linea-151",number:"151",name:"linea151",color:null,points:[{lat:-17.7980508,lng:-63.1364245},{lat:-17.798051,lng:-63.136424}]}
+];
+
+// Color palette matching the original Microcruz colors
+const COLOR_PALETTE = [
+  "#302f2f","#ff0000","#0000d3","#0a6010","#1d2174",
+  "#ff00ea","#800080","#ff4500","#00ff00","#0000ff",
+  "#ff1493","#ffd700","#00ced1","#ff69b4","#00bfff",
+  "#8b0000","#4B0082","#DC143C","#1E90FF","#9400D3",
+  "#ADFF2F","#F08080","#228B22","#40e0d0","#ff6347"
+];
+
+const ROUTE_COLORS = {
+  // Color-named routes from the data
+  "16 Azul": "#0000d3", "22 Rojo": "#ff0000", "41 Rojo": "#ff0000",
+  "41 Verde": "#00ff00", "44 Azul": "#0000d3", "44 Rojo": "#ff0000",
+  "60 Rojo": "#ff0000", "60 Verde": "#00ff00", "61 Azul": "#0000d3",
+  "61 Rojo": "#ff0000", "62 Naranja": "#ff4500", "64 Amarillo": "#ffd700",
+  "64 Rojo": "#ff0000", "66 Rojo": "#ff0000", "68 Rojo": "#ff0000",
+  "68 Verde": "#00ff00", "88 Amarillo": "#ffd700", "88 Azul": "#0000d3",
+  "96 Amarillo": "#ffd700", "96 Rojo": "#ff0000", "104B": "#1d2174",
+  "104 El Carmen": "#800080", "105 Verde": "#00ff00", "121 Rojo": "#ff0000",
+  "122 Amarillo": "#ffd700", "125 UV Doce": "#00ced1", "125 UV Once": "#00ced1",
+  "132 Montero": "#ff4500", "135 Viru Viru": "#ff1493", "136 Recreo": "#ff4500",
+  "136 Norte": "#4B0082", "140 G Pascana": "#1E90FF", "140 P Pascana": "#1E90FF",
+  "142 Verde": "#00ff00", "111 Paititi": "#00ced1"
+};
+
+function getRouteColor(num, color) {
+  if (color) {
+    const key = `${num} ${color}`;
+    if (ROUTE_COLORS[key]) return ROUTE_COLORS[key];
+    if (color === "Azul") return "#0000d3";
+    if (color === "Rojo") return "#ff0000";
+    if (color === "Verde") return "#00ff00";
+    if (color === "Amarillo") return "#ffd700";
+    if (color === "Naranja") return "#ff4500";
+    if (color === "Rosa" || color === "Rosado") return "#ff1493";
+  }
+  const idx = (parseInt(num) - 1) % COLOR_PALETTE.length;
+  return COLOR_PALETTE[idx];
+}
+
+// ==================== MAP ====================
+const map = L.map('map', {
+  center: [-17.784, -63.115],
+  zoom: 13,
+  zoomControl: false
+});
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+});
+
+const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: '© Esri'
+});
+
+osmLayer.addTo(map);
+let currentSatellite = false;
+
+function toggleSatellite() {
+  currentSatellite = !currentSatellite;
+  if (currentSatellite) {
+    map.removeLayer(osmLayer);
+    satLayer.addTo(map);
+    document.getElementById('sat-btn').classList.add('active');
+  } else {
+    map.removeLayer(satLayer);
+    osmLayer.addTo(map);
+    document.getElementById('sat-btn').classList.remove('active');
+  }
+}
+
+function resetView() {
+  map.setView([-17.784, -63.115], 13);
+  hideRoutePanel();
+}
+
+// ==================== ROUTE POLYLINES ====================
+const routePolylines = {};
+let activeRouteLayer = null;
+let userMarker = null;
+let destMarker = null;
+
+function buildRoutePolylines() {
+  ROUTES_DATA.forEach(route => {
+    const coords = route.points;
+    if (!coords || coords.length === 0) return;
+
+    const latlngs = coords.map(p => [p.lat, p.lng]);
+    const color = getRouteColor(route.number, route.color);
+
+    const polyline = L.polyline(latlngs, {
+      color: color,
+      weight: 4,
+      opacity: 0.85,
+      smoothFactor: 1
+    });
+
+    polyline.routeData = route;
+    polyline.on('click', () => showRouteDetail(route));
+    routePolylines[route.key] = polyline;
+  });
+}
+
+function showRoute(routeKey) {
+  // Hide previously active
+  if (activeRouteLayer) {
+    activeRouteLayer.setStyle({ weight: 4, opacity: 0.85 });
+  }
+  Object.values(routePolylines).forEach(pl => {
+    if (pl !== routePolylines[routeKey]) {
+      pl.setStyle({ opacity: 0.2, weight: 2 });
+    }
+  });
+
+  activeRouteLayer = routePolylines[routeKey];
+  if (activeRouteLayer) {
+    activeRouteLayer.setStyle({ weight: 6, opacity: 1 });
+    map.fitBounds(activeRouteLayer.getBounds(), { padding: [50, 50], maxZoom: 15 });
+  }
+}
+
+function hideAllRoutes() {
+  Object.values(routePolylines).forEach(pl => {
+    pl.setStyle({ opacity: 0, weight: 0 });
+  });
+  activeRouteLayer = null;
+  document.querySelectorAll('.route-chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+}
+
+function showAllRoutes() {
+  Object.values(routePolylines).forEach(pl => {
+    const color = pl.routeData ? getRouteColor(pl.routeData.number, pl.routeData.color) : '#ff0000';
+    pl.setStyle({ opacity: 0.6, weight: 3, color });
+  });
+  activeRouteLayer = null;
+  map.setView([-17.784, -63.115], 12);
+}
+
+function focusRoute() {
+  if (activeRouteLayer) {
+    map.fitBounds(activeRouteLayer.getBounds(), { padding: [80, 80], maxZoom: 15 });
+  }
+}
+
+// ==================== USER LOCATION ====================
+function requestLocation() {
+  if (!navigator.geolocation) {
+    showToast('Geolocalización no disponible', 'error');
+    return;
+  }
+  document.getElementById('locate-btn').classList.add('active');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      setUserLocation(lat, lng);
+      showToast('Ubicación encontrada', 'success');
+    },
+    err => {
+      showToast('No se pudo obtener tu ubicación', 'error');
+      document.getElementById('locate-btn').classList.remove('active');
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function setUserLocation(lat, lng) {
+  if (userMarker) map.removeLayer(userMarker);
+
+  userMarker = L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: '',
+      html: '<div class="user-marker"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    })
+  }).addTo(map);
+
+  userMarker.bindPopup('<b>Tu ubicación</b>');
+  map.setView([lat, lng], 14);
+  document.getElementById('location-text').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  document.getElementById('locate-btn').classList.add('active');
+
+  // Find nearby routes
+  findNearbyRoutes(lat, lng);
+}
+
+// ==================== DESTINATION SEARCH ====================
+async function searchDestination(query) {
+  if (!query || query.length < 3) return;
+
+  try {
+    // Use Nominatim (OpenStreetMap) for geocoding in Santa Cruz, Bolivia
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Santa Cruz, Bolivia')}&limit=5&addressdetails=1`;
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const results = await resp.json();
+
+    if (results.length === 0) {
+      showToast('No se encontraron resultados', 'info');
+      return;
+    }
+
+    const first = results[0];
+    const lat = parseFloat(first.lat);
+    const lng = parseFloat(first.lon);
+
+    // Remove old dest marker
+    if (destMarker) map.removeLayer(destMarker);
+
+    destMarker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div class="dest-marker"></div>',
+        iconSize: [20, 36],
+        iconAnchor: [10, 36]
+      })
+    }).addTo(map);
+
+    destMarker.bindPopup(`<b>Destino:</b><br>${first.display_name}`).openPopup();
+
+    // Find routes near destination
+    findRoutesNearDestination(lat, lng);
+
+    // Move map
+    map.setView([lat, lng], 15);
+
+  } catch (e) {
+    showToast('Error en la búsqueda', 'error');
+  }
+}
+
+// ==================== PROXIMITY ALGORITHM ====================
+// Haversine distance
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Find min distance from point to any point on a route
+function minDistanceToRoute(lat, lng, routePoints) {
+  let minDist = Infinity;
+  for (const pt of routePoints) {
+    const d = haversineDistance(lat, lng, pt.lat, pt.lng);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
+function findNearbyRoutes(lat, lng) {
+  const results = ROUTES_DATA.map(route => ({
+    ...route,
+    distance: minDistanceToRoute(lat, lng, route.points)
+  })).filter(r => r.distance < 2) // within 2km
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 15);
+
+  renderNearbyRoutes(results);
+  showRoutePanelIfNeeded(results, lat, lng);
+}
+
+function findRoutesNearDestination(lat, lng) {
+  const results = ROUTES_DATA.map(route => ({
+    ...route,
+    distance: minDistanceToRoute(lat, lng, route.points)
+  })).filter(r => r.distance < 2)
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 15);
+
+  renderNearbyRoutes(results, lat, lng);
+  showRoutePanelIfNeeded(results, lat, lng);
+}
+
+function showRoutePanelIfNeeded(results, lat, lng) {
+  if (results.length > 0) {
+    const r = results[0];
+    showRouteDetail(r, lat, lng);
+  }
+}
+
+// ==================== RENDER ====================
+function renderNearbyRoutes(routes, destLat, destLng) {
+  const container = document.getElementById('routes-list');
+  document.getElementById('routes-count').textContent = routes.length;
+
+  if (routes.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:30px; color: var(--text-dim); font-size:10pt;">
+      No hay rutas muy cercanas.<br>Intenta mover el mapa o buscar otro destino.
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = routes.map(route => {
+    const color = getRouteColor(route.number, route.color);
+    const distKm = route.distance.toFixed(1);
+    return `
+    <div class="route-card" onclick="selectRouteCard('${route.key}')" id="card-${route.key}">
+      <div class="route-card-header">
+        <div class="route-number" style="background:${color}; border-radius:8px; padding:4px 8px; color:white; min-width:46px; text-align:center;">
+          ${route.number}${route.color ? '<br><span style="font-size:7pt; opacity:0.8">' + route.color + '</span>' : ''}
+        </div>
+        <div class="route-info">
+          <div class="route-name">Línea ${route.number}${route.color ? ' ' + route.color : ''}</div>
+          <div class="route-variant">${route.points.length} puntos GPS</div>
+        </div>
+      </div>
+      <div class="route-stats">
+        <div class="route-stat">
+          <div class="route-stat-dot" style="background:${color}"></div>
+          📍 ${distKm} km
+        </div>
+        <div class="route-stat">🚌 ${route.points.length} paradas</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectRouteCard(key) {
+  document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('card-' + key);
+  if (card) card.classList.add('selected');
+  showRoute(key);
+}
+
+function showRouteDetail(route, userLat, userLng) {
+  const color = getRouteColor(route.number, route.color);
+
+  document.getElementById('rdp-number').textContent = route.number;
+  document.getElementById('rdp-number').style.color = color;
+  document.getElementById('rdp-color').style.background = color;
+  document.getElementById('rdp-name').textContent = `Línea ${route.number}${route.color ? ' ' + route.color : ''}`;
+  document.getElementById('rdp-points').textContent = route.points.length;
+
+  if (userLat && userLng) {
+    const dist = haversineDistance(userLat, userLng, route.points[0].lat, route.points[0].lng);
+    document.getElementById('rdp-dist').textContent = dist.toFixed(1) + ' km';
+  }
+
+  document.getElementById('route-panel').classList.add('visible');
+  showRoute(route.key);
+}
+
+function hideRoutePanel() {
+  document.getElementById('route-panel').classList.remove('visible');
+  Object.values(routePolylines).forEach(pl => {
+    if (pl !== activeRouteLayer) {
+      pl.setStyle({ opacity: 0.6, weight: 3 });
+    }
+  });
+}
+
+// ==================== ALL ROUTES GRID ====================
+function buildAllRoutesGrid() {
+  const grid = document.getElementById('all-routes-grid');
+
+  // Sort by number
+  const sorted = [...ROUTES_DATA].sort((a, b) => parseInt(a.number || 0) - parseInt(b.number || 0));
+
+  grid.innerHTML = sorted.map(route => {
+    const color = getRouteColor(route.number, route.color);
+    return `<div class="route-chip"
+      style="background:${color}22; color:${color}; border-color:${color}44;"
+      onclick="toggleRoute('${route.key}')"
+      id="chip-${route.key}"
+      title="${route.key}">
+      <div class="route-chip-dot" style="background:${color}"></div>
+      ${route.number}
+    </div>`;
+  }).join('');
+
+  // Show all routes on map
+  showAllRoutes();
+}
+
+let selectedChipRoute = null;
+function toggleRoute(key) {
+  if (selectedChipRoute === key) {
+    selectedChipRoute = null;
+    document.getElementById('chip-' + key).classList.remove('active');
+    showAllRoutes();
+  } else {
+    document.querySelectorAll('.route-chip').forEach(c => c.classList.remove('active'));
+    document.getElementById('chip-' + key).classList.add('active');
+    selectedChipRoute = key;
+    showRoute(key);
+  }
+}
+
+// ==================== TOAST ====================
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.className = `toast ${type} visible`;
+  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${msg}`;
+  setTimeout(() => toast.classList.remove('visible'), 3000);
+}
+
+// ==================== SEARCH INPUT ====================
+let searchTimeout;
+document.getElementById('search-input').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchDestination(this.value.trim());
+  }, 700);
+});
+
+document.getElementById('search-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    clearTimeout(searchTimeout);
+    searchDestination(this.value.trim());
+  }
+});
+
+// ==================== INIT ====================
+async function init() {
+  buildRoutePolylines();
+  buildAllRoutesGrid();
+
+  // Try to get user location automatically
+  if (navigator.geolocation) {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        pos => setUserLocation(pos.coords.latitude, pos.coords.longitude),
+        () => { /* Silently fail, user can click button */ }
+      );
+    } catch(e) {}
+  }
+
+  document.getElementById('loading').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
