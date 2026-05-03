@@ -1529,8 +1529,8 @@ function init() {
   }
 }
 
-// Initialize on window load to ensure all scripts and DOM are ready
-window.addEventListener('load', init);
+// Initialize synchronously when this script block executes
+init();
 </script>
 </body>
 </html>
